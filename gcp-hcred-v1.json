@@ -1,0 +1,918 @@
+{
+  "components": {
+    "comp-endpoint-create": {
+      "executorLabel": "exec-endpoint-create",
+      "inputDefinitions": {
+        "parameters": {
+          "description": {
+            "defaultValue": "",
+            "description": "The description of the Endpoint.",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "display_name": {
+            "description": "The user-defined name of the Endpoint. The name can be up to 128 characters long and can be consist of any UTF-8 characters.",
+            "parameterType": "STRING"
+          },
+          "encryption_spec_key_name": {
+            "defaultValue": "",
+            "description": "Customer-managed encryption key spec for an Endpoint. If set, this Endpoint and all of this Endoint's sub-resources will be secured by this key. Has the form: `projects/my-project/locations/my-location/keyRings/my-kr/cryptoKeys/my-key`. The key needs to be in the same region as where the compute resource is created.  If set, this Endpoint and all sub-resources of this Endpoint will be secured by this key.",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "labels": {
+            "defaultValue": {},
+            "description": "The labels with user-defined metadata to organize your Endpoints.  Label keys and values can be no longer than 64 characters (Unicode codepoints), can only contain lowercase letters, numeric characters, underscores and dashes. International characters are allowed.  See https://goo.gl/xmQnxf for more information and examples of labels.",
+            "isOptional": true,
+            "parameterType": "STRUCT"
+          },
+          "location": {
+            "defaultValue": "us-central1",
+            "description": "Location to create the Endpoint. If not set, default to us-central1.",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "network": {
+            "defaultValue": "",
+            "description": "The full name of the Google Compute Engine network to which the Endpoint should be peered. Private services access must already be configured for the network. If left unspecified, the Endpoint is not peered with any network. [Format](https://cloud.google.com/compute/docs/reference/rest/v1/networks/insert): `projects/{project}/global/networks/{network}`. Where `{project}` is a project number, as in `'12345'`, and `{network}` is network name.",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "project": {
+            "defaultValue": "{{$.pipeline_google_cloud_project_id}}",
+            "description": "Project to create the Endpoint. Defaults to the project in which the PipelineJob is run.",
+            "isOptional": true,
+            "parameterType": "STRING"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "artifacts": {
+          "endpoint": {
+            "artifactType": {
+              "schemaTitle": "google.VertexEndpoint",
+              "schemaVersion": "0.0.1"
+            },
+            "description": "Artifact tracking the created Endpoint."
+          }
+        },
+        "parameters": {
+          "gcp_resources": {
+            "description": "Serialized JSON of `gcp_resources` [proto](https://github.com/kubeflow/pipelines/tree/master/components/google-cloud/google_cloud_pipeline_components/proto) which tracks the create Endpoint's long-running operation.",
+            "parameterType": "STRING"
+          }
+        }
+      }
+    },
+    "comp-load-bq-dataset": {
+      "executorLabel": "exec-load-bq-dataset",
+      "inputDefinitions": {
+        "parameters": {
+          "bq_dataset": {
+            "parameterType": "STRING"
+          },
+          "project_id": {
+            "parameterType": "STRING"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "artifacts": {
+          "dataset_test": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          },
+          "dataset_train": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        }
+      }
+    },
+    "comp-model-deploy": {
+      "executorLabel": "exec-model-deploy",
+      "inputDefinitions": {
+        "artifacts": {
+          "endpoint": {
+            "artifactType": {
+              "schemaTitle": "google.VertexEndpoint",
+              "schemaVersion": "0.0.1"
+            },
+            "description": "The Endpoint to be deployed to.",
+            "isOptional": true
+          },
+          "model": {
+            "artifactType": {
+              "schemaTitle": "google.VertexModel",
+              "schemaVersion": "0.0.1"
+            },
+            "description": "The model to be deployed."
+          }
+        },
+        "parameters": {
+          "automatic_resources_max_replica_count": {
+            "defaultValue": 0.0,
+            "description": "The maximum number of replicas this DeployedModel may be deployed on when the traffic against it increases. If the requested value is too large, the deployment will error, but if deployment succeeds then the ability to scale the model to that many replicas is guaranteed (barring service outages). If traffic against the DeployedModel increases beyond what its replicas at maximum may handle, a portion of the traffic will be dropped. If this value is not provided, a no upper bound for scaling under heavy traffic will be assume, though Vertex AI may be unable to scale beyond certain replica number.",
+            "isOptional": true,
+            "parameterType": "NUMBER_INTEGER"
+          },
+          "automatic_resources_min_replica_count": {
+            "defaultValue": 0.0,
+            "description": "The minimum number of replicas this DeployedModel will be always deployed on. If traffic against it increases, it may dynamically be deployed onto more replicas up to `automatic_resources_max_replica_count`, and as traffic decreases, some of these extra replicas may be freed. If the requested value is too large, the deployment will error.  This field is required if `dedicated_resources_machine_type` is not specified.",
+            "isOptional": true,
+            "parameterType": "NUMBER_INTEGER"
+          },
+          "dedicated_resources_accelerator_count": {
+            "defaultValue": 0.0,
+            "description": "The number of accelerators to attach to a worker replica.",
+            "isOptional": true,
+            "parameterType": "NUMBER_INTEGER"
+          },
+          "dedicated_resources_accelerator_type": {
+            "defaultValue": "",
+            "description": "Hardware accelerator type. Must also set accelerator_count if used. See [available options](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/MachineSpec#AcceleratorType).  This field is required if `dedicated_resources_machine_type` is specified.",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "dedicated_resources_machine_type": {
+            "defaultValue": "",
+            "description": "The specification of a single machine used by the prediction.  This field is required if `automatic_resources_min_replica_count` is not specified.  See [more information](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.endpoints#dedicatedresources).",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "dedicated_resources_max_replica_count": {
+            "defaultValue": 0.0,
+            "description": "The maximum number of replicas this deployed model may the larger value of min_replica_count or 1 will be used. If value provided is smaller than min_replica_count, it will automatically be increased to be min_replica_count. The maximum number of replicas this deployed model may be deployed on when the traffic against it increases. If requested value is too large, the deployment will error, but if deployment succeeds then the ability to scale the model to that many replicas is guaranteed (barring service outages). If traffic against the deployed model increases beyond what its replicas at maximum may handle, a portion of the traffic will be dropped. If this value is not provided, will use `dedicated_resources_min_replica_count` as the default value.",
+            "isOptional": true,
+            "parameterType": "NUMBER_INTEGER"
+          },
+          "dedicated_resources_min_replica_count": {
+            "defaultValue": 0.0,
+            "description": "The minimum number of machine replicas this DeployedModel will be always deployed on. This value must be greater than or equal to 1. If traffic against the DeployedModel increases, it may dynamically be deployed onto more replicas, and as traffic decreases, some of these extra replicas may be freed.",
+            "isOptional": true,
+            "parameterType": "NUMBER_INTEGER"
+          },
+          "deployed_model_display_name": {
+            "defaultValue": "",
+            "description": "The display name of the DeployedModel. If not provided upon creation, the Model's display_name is used.",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "disable_container_logging": {
+            "defaultValue": false,
+            "description": "For custom-trained Models and AutoML Tabular Models, the container of the DeployedModel instances will send stderr and stdout streams to Stackdriver Logging by default. Please note that the logs incur cost, which are subject to Cloud Logging pricing.  User can disable container logging by setting this flag to true.",
+            "isOptional": true,
+            "parameterType": "BOOLEAN"
+          },
+          "enable_access_logging": {
+            "defaultValue": false,
+            "description": "These logs are like standard server access logs, containing information like timestamp and latency for each prediction request.  Note that Stackdriver logs may incur a cost, especially if your project receives prediction requests at a high queries per second rate (QPS). Estimate your costs before enabling this option.",
+            "isOptional": true,
+            "parameterType": "BOOLEAN"
+          },
+          "explanation_metadata": {
+            "defaultValue": {},
+            "description": "Metadata describing the Model's input and output for explanation. See [more information](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/ExplanationSpec#explanationmetadata).",
+            "isOptional": true,
+            "parameterType": "STRUCT"
+          },
+          "explanation_parameters": {
+            "defaultValue": {},
+            "description": "Parameters that configure explaining information of the Model's predictions. See [more information](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/ExplanationSpec#explanationmetadata).",
+            "isOptional": true,
+            "parameterType": "STRUCT"
+          },
+          "service_account": {
+            "defaultValue": "",
+            "description": "The service account that the DeployedModel's container runs as. Specify the email address of the service account. If this service account is not specified, the container runs as a service account that doesn't have access to the resource project.  Users deploying the Model must have the `iam.serviceAccounts.actAs` permission on this service account.",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "traffic_split": {
+            "defaultValue": {},
+            "description": "A map from a DeployedModel's ID to the percentage of this Endpoint's traffic that should be forwarded to that DeployedModel.  If this field is non-empty, then the Endpoint's trafficSplit will be overwritten with it. To refer to the ID of the just being deployed Model, a \"0\" should be used, and the actual ID of the new DeployedModel will be filled in its place by this method. The traffic percentage values must add up to 100.  If this field is empty, then the Endpoint's trafficSplit is not updated.",
+            "isOptional": true,
+            "parameterType": "STRUCT"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "parameters": {
+          "gcp_resources": {
+            "description": "Serialized JSON of `gcp_resources` [proto](https://github.com/kubeflow/pipelines/tree/master/components/google-cloud/google_cloud_pipeline_components/proto) which tracks the deploy Model's long-running operation.",
+            "parameterType": "STRING"
+          }
+        }
+      }
+    },
+    "comp-model-evaluate": {
+      "executorLabel": "exec-model-evaluate",
+      "inputDefinitions": {
+        "artifacts": {
+          "model": {
+            "artifactType": {
+              "schemaTitle": "system.Artifact",
+              "schemaVersion": "0.0.1"
+            }
+          },
+          "test_set": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        },
+        "parameters": {
+          "target_col": {
+            "parameterType": "STRING"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "artifacts": {
+          "metrics": {
+            "artifactType": {
+              "schemaTitle": "system.ClassificationMetrics",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        }
+      }
+    },
+    "comp-model-train": {
+      "executorLabel": "exec-model-train",
+      "inputDefinitions": {
+        "artifacts": {
+          "train_set": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        },
+        "parameters": {
+          "base_output_directory": {
+            "defaultValue": "",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "display_name": {
+            "defaultValue": "model-train",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "enable_web_access": {
+            "defaultValue": false,
+            "isOptional": true,
+            "parameterType": "BOOLEAN"
+          },
+          "encryption_spec_key_name": {
+            "defaultValue": "",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "labels": {
+            "defaultValue": {},
+            "isOptional": true,
+            "parameterType": "STRUCT"
+          },
+          "location": {
+            "defaultValue": "us-central1",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "model_name": {
+            "parameterType": "STRING"
+          },
+          "model_params": {
+            "isOptional": true,
+            "parameterType": "STRUCT"
+          },
+          "network": {
+            "defaultValue": "",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "project": {
+            "defaultValue": "{{$.pipeline_google_cloud_project_id}}",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "reserved_ip_ranges": {
+            "defaultValue": [],
+            "isOptional": true,
+            "parameterType": "LIST"
+          },
+          "restart_job_on_worker_restart": {
+            "defaultValue": false,
+            "isOptional": true,
+            "parameterType": "BOOLEAN"
+          },
+          "service_account": {
+            "defaultValue": "",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "target_col": {
+            "parameterType": "STRING"
+          },
+          "tensorboard": {
+            "defaultValue": "",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "timeout": {
+            "defaultValue": "604800s",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "worker_pool_specs": {
+            "defaultValue": [
+              {
+                "container_spec": {
+                  "args": [
+                    "--executor_input",
+                    "{{$.json_escape[1]}}",
+                    "--function_to_execute",
+                    "model_train"
+                  ],
+                  "command": [
+                    "sh",
+                    "-c",
+                    "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&  python3 -m pip install --quiet --no-warn-script-location 'pyarrow' 'category_encoders' 'dill' && \"$0\" \"$@\"\n",
+                    "sh",
+                    "-ec",
+                    "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+                    "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef model_train(\n    model_name:str,\n    target_col: str,\n    train_set: Input[Dataset],\n    model: Output[Artifact],\n    # model: Output[Model],\n    model_params: dict = None\n):\n    from sklearn.pipeline import Pipeline\n    from sklearn.preprocessing import MinMaxScaler\n    from sklearn.linear_model import LogisticRegression\n    from sklearn.base import BaseEstimator, TransformerMixin\n    from  category_encoders import CatBoostEncoder\n    import pathlib\n    from pathlib import Path\n    import pandas as pd\n    import numpy as np    \n    import warnings\n    import joblib\n    import logging\n    import gc\n\n    if model_params is None:\n        model_params = {}\n\n    ### Features\n    #region\n    NUMERICAL_FEATURES = [\n        'MONTH',\n        'WEEK_NUM',\n        'actualdpdtolerance_344P',\n        'amtinstpaidbefduel24m_4187115A',\n        'annuity_780A',\n        'annuitynextmonth_57A',\n        'applicationcnt_361L',\n        'applications30d_658L',\n        'applicationscnt_1086L',\n        'applicationscnt_464L',\n        'applicationscnt_629L',\n        'applicationscnt_867L',\n        'avgdbddpdlast24m_3658932P',\n        'avgdbddpdlast3m_4187120P',\n        'avgdbdtollast24m_4525197P',\n        'avgdpdtolclosure24_3658938P',\n        'avginstallast24m_3658937A',\n        'avglnamtstart24m_4525187A',\n        'avgmaxdpdlast9m_3716943P',\n        'avgoutstandbalancel6m_4187114A',\n        'avgpmtlast12m_4525200A',\n        'clientscnt12m_3712952L',\n        'clientscnt3m_3712950L',\n        'clientscnt6m_3712949L',\n        'clientscnt_100L',\n        'clientscnt_1022L',\n        'clientscnt_1071L',\n        'clientscnt_1130L',\n        'clientscnt_136L',\n        'clientscnt_157L',\n        'clientscnt_257L',\n        'clientscnt_304L',\n        'clientscnt_360L',\n        'clientscnt_493L',\n        'clientscnt_533L',\n        'clientscnt_887L',\n        'clientscnt_946L',\n        'cntincpaycont9m_3716944L',\n        'cntpmts24_3658933L',\n        'commnoinclast6m_3546845L',\n        'credamount_770A',\n        'currdebt_22A',\n        'currdebtcredtyperange_828A',\n        'daysoverduetolerancedd_3976961L',\n        'deferredmnthsnum_166L',\n        'disbursedcredamount_1113A',\n        'downpmt_116A',\n        'eir_270L',\n        'homephncnt_628L',\n        'inittransactionamount_650A',\n        'interestrate_311L',\n        'interestrategrace_34L',\n        'lastapprcredamount_781A',\n        'lastdependentsnum_448L',\n        'lastotherinc_902A',\n        'lastotherlnsexpense_631A',\n        'lastrejectcredamount_222A',\n        'maininc_215A',\n        'mastercontrelectronic_519L',\n        'mastercontrexist_109L',\n        'maxannuity_159A',\n        'maxannuity_4075009A',\n        'maxdbddpdlast1m_3658939P',\n        'maxdbddpdtollast12m_3658940P',\n        'maxdbddpdtollast6m_4187119P',\n        'maxdebt4_972A',\n        'maxdpdfrom6mto36m_3546853P',\n        'maxdpdinstlnum_3546846P',\n        'maxdpdlast12m_727P',\n        'maxdpdlast24m_143P',\n        'maxdpdlast3m_392P',\n        'maxdpdlast6m_474P',\n        'maxdpdlast9m_1059P',\n        'maxdpdtolerance_374P',\n        'maxinstallast24m_3658928A',\n        'maxlnamtstart6m_4525199A',\n        'maxoutstandbalancel12m_4187113A',\n        'maxpmtlast3m_4525190A',\n        'mindbddpdlast24m_3658935P',\n        'mindbdtollast24m_4525191P',\n        'mobilephncnt_593L',\n        'monthsannuity_845L',\n        'numactivecreds_622L',\n        'numactivecredschannel_414L',\n        'numactiverelcontr_750L',\n        'numcontrs3months_479L',\n        'numincomingpmts_3546848L',\n        'numinstlallpaidearly3d_817L',\n        'numinstls_657L',\n        'numinstlsallpaid_934L',\n        'numinstlswithdpd10_728L',\n        'numinstlswithdpd5_4187116L',\n        'numinstlswithoutdpd_562L',\n        'numinstmatpaidtearly2d_4499204L',\n        'numinstpaid_4499208L',\n        'numinstpaidearly3d_3546850L',\n        'numinstpaidearly3dest_4493216L',\n        'numinstpaidearly5d_1087L',\n        'numinstpaidearly5dest_4493211L',\n        'numinstpaidearly5dobd_4499205L',\n        'numinstpaidearly_338L',\n        'numinstpaidearlyest_4493214L',\n        'numinstpaidlastcontr_4325080L',\n        'numinstpaidlate1d_3546852L',\n        'numinstregularpaid_973L',\n        'numinstregularpaidest_4493210L',\n        'numinsttopaygr_769L',\n        'numinsttopaygrest_4493213L',\n        'numinstunpaidmax_3546851L',\n        'numinstunpaidmaxest_4493212L',\n        'numnotactivated_1143L',\n        'numpmtchanneldd_318L',\n        'numrejects9m_859L',\n        'pctinstlsallpaidearl3d_427L',\n        'pctinstlsallpaidlat10d_839L',\n        'pctinstlsallpaidlate1d_3546856L',\n        'pctinstlsallpaidlate4d_3546849L',\n        'pctinstlsallpaidlate6d_3546844L',\n        'pmtnum_254L',\n        'posfpd10lastmonth_333P',\n        'posfpd30lastmonth_3976960P',\n        'posfstqpd30lastmonth_3976962P',\n        'price_1097A',\n        'sellerplacecnt_915L',\n        'sellerplacescnt_216L',\n        'sumoutstandtotal_3546847A',\n        'sumoutstandtotalest_4493215A',\n        'totaldebt_9A',\n        'totalsettled_863A',\n        'totinstallast1m_4525188A',\n        'contractssum_5085716L',\n        'days120_123L',\n        'days180_256L',\n        'days30_165L',\n        'days360_512L',\n        'days90_310L',\n        'firstquarter_103L',\n        'for3years_128L',\n        'for3years_504L',\n        'for3years_584L',\n        'formonth_118L',\n        'formonth_206L',\n        'formonth_535L',\n        'forquarter_1017L',\n        'forquarter_462L',\n        'forquarter_634L',\n        'fortoday_1092L',\n        'forweek_1077L',\n        'forweek_528L',\n        'forweek_601L',\n        'foryear_618L',\n        'foryear_818L',\n        'foryear_850L',\n        'fourthquarter_440L',\n        'numberofqueries_373L',\n        'pmtaverage_3A',\n        'pmtaverage_4527227A',\n        'pmtaverage_4955615A',\n        'pmtcount_4527229L',\n        'pmtcount_4955617L',\n        'pmtcount_693L',\n        'pmtscount_423L',\n        'pmtssum_45A',\n        'riskassesment_940T',\n        'secondquarter_766L',\n        'thirdquarter_1082L'\n    ]\n    CATEGORICAL_FEATURES = [\n        'bankacctype_710L',\n        'cardtype_51L',\n        'credtype_322L',\n        'disbursementtype_67L',\n        'equalitydataagreement_891L',\n        'equalityempfrom_62L',\n        'inittransactioncode_186L',\n        'isbidproduct_1095L',\n        'isbidproductrequest_292L',\n        'isdebitcard_729L',\n        'lastapprcommoditycat_1041M',\n        'lastapprcommoditytypec_5251766M',\n        'lastcancelreason_561M',\n        'lastrejectcommoditycat_161M',\n        'lastrejectcommodtypec_5251769M',\n        'lastrejectreason_759M',\n        'lastrejectreasonclient_4145040M',\n        'lastst_736L',\n        'opencred_647L',\n        'paytype1st_925L',\n        'paytype_783L',\n        'previouscontdistrict_112M',\n        'twobodfilling_608L',\n        'typesuite_864L',\n        'description_5085714M',\n        'education_1103M',\n        'education_88M',\n        'maritalst_385M',\n        'maritalst_893M',\n        'requesttype_4525192L',\n        'riskassesment_302T'\n    ]\n    DATE_FEATURES = [\n        'date_decision',\n        'datefirstoffer_1144D',\n        'datelastinstal40dpd_247D',\n        'datelastunpaid_3546854D',\n        'dtlastpmtallstes_4499206D',\n        'firstclxcampaign_1125D',\n        'firstdatedue_489D',\n        'lastactivateddate_801D',\n        'lastapplicationdate_877D',\n        'lastapprdate_640D',\n        'lastdelinqdate_224D',\n        'lastrejectdate_50D',\n        'lastrepayingdate_696D',\n        'maxdpdinstldate_3546855D',\n        'validfrom_1069D',\n        'assignmentdate_238D',\n        'assignmentdate_4527235D',\n        'assignmentdate_4955616D',\n        'birthdate_574D',\n        'dateofbirth_337D',\n        'dateofbirth_342D',\n        'responsedate_1012D',\n        'responsedate_4527233D',\n        'responsedate_4917613D',\n        'payvacationpostpone_4187118D',\n    ]\n    #endregion\n\n    ### Preprocessing classes\n    #region\n    #Numerical Imputer\n    class NumericalImputer(BaseEstimator, TransformerMixin):\n        \"\"\"Numerical Data Missing Value Imputer\"\"\"\n        def __init__(self, variables=None):\n                self.variables = variables\n\n        def fit(self, X, y=None):\n            self.imputer_dict_={}\n            for feature in self.variables:\n                self.imputer_dict_[feature] = X[feature].mean()\n            return self\n\n        def transform(self, X):\n            for feature in self.variables:\n                X[feature] = X[feature].fillna(self.imputer_dict_[feature])\n            return X\n\n    class DatesImputer(BaseEstimator, TransformerMixin):\n        \"\"\"Numerical Data Missing Value Imputer\"\"\"\n        def __init__(self, variables=None):\n                self.variables = variables\n\n        def fit(self, X, y=None):\n            self.imputer_dict_={}\n            for feature in self.variables:\n                self.imputer_dict_[feature] = X[feature].mean()\n            return self\n\n        def transform(self,X):\n            for feature in self.variables:\n                X[feature] = X[feature].fillna(self.imputer_dict_[feature])\n            return X\n\n    #Categorical Imputer\n    class CategoricalImputer(BaseEstimator, TransformerMixin):\n        \"\"\"Categorical Data Missing Value Imputer\"\"\"\n        def __init__(self, variables=None):\n            self.variables = variables\n\n        def fit(self, X,y=None):\n            self.imputer_dict_={}\n            for feature in self.variables:\n                self.imputer_dict_[feature] = X[feature].mode()[0]\n            return self\n\n        def transform(self, X):\n            for feature in self.variables:\n                X[feature] = X[feature].fillna(self.imputer_dict_[feature])\n            return X\n\n    class Log1pTransformer(BaseEstimator, TransformerMixin):\n        def __init__(self, num_cols=[], threshold=100):\n            super().__init__()\n            self.num_cols = num_cols\n            self.threshold = threshold\n            self.outliers_cols=[]\n\n        def fit(self, X, y=None):\n            X = X[self.num_cols]\n            with warnings.catch_warnings():\n                warnings.simplefilter(action='ignore', category=RuntimeWarning)\n                X_desc = X.describe()\n            max_to_mean = (\n                np.abs(X_desc.loc['max'] / X_desc.loc['mean'])\n            )\n            min_to_mean = (\n                np.abs(X_desc.loc['min'] / X_desc.loc['mean'])\n            )\n            max_to_mean_finite = max_to_mean[np.isfinite(max_to_mean)]\n            min_to_mean_finite = min_to_mean[np.isfinite(min_to_mean)]\n            outliers_cols_max = list(max_to_mean_finite[max_to_mean_finite > self.threshold].index)\n            outliers_cols_min = list(min_to_mean_finite[min_to_mean_finite > self.threshold].index)\n            self.outliers_cols = outliers_cols_max + outliers_cols_min\n            return self\n\n        def transform(self, X):\n            for col in self.outliers_cols:\n                X[col] = np.log1p(np.abs(X[col])) * np.sign(X[col])\n            return X\n\n        def get_feature_names_out(self, input_features=None):\n            return input_features\n\n    class DateColsTransformer(BaseEstimator, TransformerMixin):\n        \"\"\"Feature Engineering\"\"\"\n        def __init__(self, reference_date_col='date_decision', date_cols=[]):\n            self.date_cols = date_cols\n            self.ref_col = reference_date_col\n\n        def fit(self, X,y=None):\n            return self\n\n        def transform(self, X):\n            X['month_decision'] = X[\"date_decision\"].dt.month.astype('int16')\n            X['weekday_decision'] = X[\"date_decision\"].dt.month.astype('int16')\n            X['day_decision'] = X[\"date_decision\"].dt.month.astype('int16')\n\n            for col_name in self.date_cols:\n                if col_name == 'date_decision':\n                    continue\n                X[col_name] = X[col_name] - X[self.ref_col]\n                X[col_name] = X[col_name].dt.days.astype('int32')\n            X = X.drop(\"date_decision\", axis=1)\n            return X\n\n    class TableDtypesTransformer(BaseEstimator, TransformerMixin):\n        def __init__(self):\n            pass\n\n        def fit(self, X, y=None):\n            return self\n\n        def transform(self, X):\n            for col in X.columns:\n                if col in [\"case_id\", \"WEEK_NUM\", \"num_group1\", \"num_group2\"]:\n                    X[col] = X[col].astype('int64')\n                elif col in [\"date_decision\"]:\n                    X[col] = pd.to_datetime(X[col])\n                elif col[-1] in (\"P\", \"A\"):\n                    X[col] = X[col].astype('float64')\n                elif col[-1] in (\"M\",) or 'person' in col:\n                    X[col] = X[col].astype('category')\n                elif col[-1] in (\"D\",):\n                    X[col] = pd.to_datetime(X[col])\n            return X\n\n        def get_feature_names_out(self, input_features=None):\n            return input_features\n\n    class DowncastTransformer(BaseEstimator, TransformerMixin):\n        \"\"\"\n        Reduce memory usage of a Pandas DataFrame by converting \n        object types to categories and downcasting numeric columns\n        \"\"\"\n        def __init__(self):\n            pass\n\n        def fit(self, X, y=None):\n            return self\n\n        def transform(self, X):\n            start_mem = X.memory_usage().sum() / 1024**2\n            logging.info('Memory usage of dataframe is {:.2f} MB'.format(start_mem))\n            object_cols, int_cols, float_cols = [], [], []\n            for col, dtype in X.dtypes.items():\n                if pd.api.types.is_object_dtype(dtype):\n                    object_cols.append(col)\n                elif pd.api.types.is_integer_dtype(dtype):\n                    int_cols.append(col)\n                elif pd.api.types.is_float_dtype(dtype):\n                    float_cols.append(col)\n            X[object_cols] = X[object_cols].astype('category')\n            X[int_cols] = X[int_cols].apply(pd.to_numeric, downcast='integer')\n            X[float_cols] = X[float_cols].apply(pd.to_numeric, downcast='float')\n\n            end_mem = X.memory_usage().sum() / 1024**2\n            logging.info('Memory usage after optimization is: {:.2f} MB'.format(end_mem))\n            logging.info('Decreased by {:.1f}%'.format(100 * (start_mem - end_mem) / start_mem))\n            return X\n\n        def get_feature_names_out(self, input_features=None):\n            return input_features\n\n    class Debugger(BaseEstimator, TransformerMixin):\n        def __init__(self):\n            pass\n\n        def fit(self, X=None, y=None):\n            return self\n\n        def transform(self, X):\n            logging.info(f\"X.shape: {X.shape}\")\n            logging.info(f\"X type: {type(X)}\")\n            logging.info(f\"inf count: {np.count_nonzero(np.isinf(X))}\")\n            logging.info(f\"nan count: {np.count_nonzero(np.isnan(X))}\")\n            logging.info(f\"nan cols: {X.columns[X.isna().any()].tolist()}\")            \n            return X\n\n        def get_feature_names_out(self, input_features=None):\n            return input_features\n    #endregion\n\n    all_feats = NUMERICAL_FEATURES + CATEGORICAL_FEATURES + DATE_FEATURES\n    train_df = pd.read_parquet(train_set.path)\n    logging.info(\"train_df load completed\")\n    X = train_df[all_feats]\n    y = train_df[target_col]\n\n    del train_df\n    gc.collect()\n\n    model_pipeline = Pipeline(\n        [\n            ('TableDtypes Transformer', TableDtypesTransformer()),\n            ('Downcast Transformer', DowncastTransformer()),\n            ('Numerical Imputer', NumericalImputer(variables=NUMERICAL_FEATURES)),\n            ('Categorical Encoder', CatBoostEncoder(cols=CATEGORICAL_FEATURES)),\n            ('Categorical Imputer', CategoricalImputer(variables=CATEGORICAL_FEATURES)),\n            ('Dates Imputer', DatesImputer(variables=DATE_FEATURES)),\n            ('Dates Transformer', DateColsTransformer(date_cols=DATE_FEATURES)),\n            # ('Debugger', Debugger()),\n            ('Log Transform', Log1pTransformer(num_cols=NUMERICAL_FEATURES)),\n            ('Scaler Transform', MinMaxScaler(copy=False)),\n            ('Linear Model', LogisticRegression(**model_params))\n        ], verbose=True\n    )\n    model_pipeline.fit(X, y)\n    logging.info(\"model fit completed\")\n\n    model.metadata[\"framework\"] = \"scikit-learn\"\n    model.metadata[\"containerSpec\"] = {\n        \"imageUri\": \"europe-docker.pkg.dev/vertex-ai/prediction/sklearn-cpu.1-1:latest\"\n    }\n    model.metadata[\"model_name\"] = model_name\n    pathlib.Path(model.path).mkdir()\n    model.metadata[\"model_path\"] = Path(model.path, f\"{model_name}.pkl\").absolute().as_posix()\n\n    # joblib.dump(model_pipeline, model.metadata[\"model_path\"])\n    # import pickle\n    # with open(model.metadata[\"model_path\"], 'wb') as f:\n    #     pickle.dump(model_pipeline, f)\n    import dill\n\n    # cloudpickle.register_pickle_by_value(TableDtypesTransformer)\n    with open(model.metadata[\"model_path\"], 'wb') as file:\n        dill.dump(\n            obj=model_pipeline,\n            file=file,\n            recurse=True,\n        )\n\n    # logging.info(\"Saved Pipeline:\", model.metadata[\"model_path\"])\n\n"
+                  ],
+                  "env": [],
+                  "image_uri": "europe-docker.pkg.dev/vertex-ai/prediction/sklearn-cpu.1-1:latest"
+                },
+                "disk_spec": {
+                  "boot_disk_size_gb": 100.0,
+                  "boot_disk_type": "pd-ssd"
+                },
+                "machine_spec": {
+                  "machine_type": "n1-standard-4"
+                },
+                "replica_count": 1.0
+              }
+            ],
+            "isOptional": true,
+            "parameterType": "LIST"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "artifacts": {
+          "model": {
+            "artifactType": {
+              "schemaTitle": "system.Artifact",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        },
+        "parameters": {
+          "gcp_resources": {
+            "parameterType": "STRING"
+          }
+        }
+      }
+    },
+    "comp-model-upload": {
+      "executorLabel": "exec-model-upload",
+      "inputDefinitions": {
+        "artifacts": {
+          "parent_model": {
+            "artifactType": {
+              "schemaTitle": "google.VertexModel",
+              "schemaVersion": "0.0.1"
+            },
+            "description": "An artifact of a model which to upload a new version to. Only specify this field when uploading a new version. [More information.](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.models/upload#request-body)",
+            "isOptional": true
+          },
+          "unmanaged_container_model": {
+            "artifactType": {
+              "schemaTitle": "google.UnmanagedContainerModel",
+              "schemaVersion": "0.0.1"
+            },
+            "description": "The unmanaged container model to be uploaded.  The Model can be passed from an upstream step or imported via a KFP `dsl.importer`. Example:\nfrom kfp import dsl\nfrom google_cloud_pipeline_components.types import artifact_types\n\nimporter_spec = dsl.importer( artifact_uri='gs://managed-pipeline-gcpc-e2e-test/automl-tabular/model', artifact_class=artifact_types.UnmanagedContainerModel, metadata={ 'containerSpec': { 'imageUri': 'us-docker.pkg.dev/vertex-ai/automl-tabular/prediction-server:prod' } })",
+            "isOptional": true
+          }
+        },
+        "parameters": {
+          "description": {
+            "defaultValue": "",
+            "description": "The description of the Model. [More information.](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.models#Model)",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "display_name": {
+            "description": "The display name of the Model. The name can be up to 128 characters long and can be consist of any UTF-8 characters. [More information.](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.models#Model)",
+            "parameterType": "STRING"
+          },
+          "encryption_spec_key_name": {
+            "defaultValue": "",
+            "description": "Customer-managed encryption key spec for a Model. If set, this Model and all sub-resources of this Model will be secured by this key.  Has the form: `projects/my-project/locations/my-location/keyRings/my-kr/cryptoKeys/my-key`. The key needs to be in the same region as where the compute resource is created.",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "explanation_metadata": {
+            "defaultValue": {},
+            "description": "Metadata describing the Model's input and output for explanation. Both `explanation_metadata` and `explanation_parameters` must be passed together when used. [More information.](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/ExplanationSpec#explanationmetadata)",
+            "isOptional": true,
+            "parameterType": "STRUCT"
+          },
+          "explanation_parameters": {
+            "defaultValue": {},
+            "description": "Parameters to configure explaining for Model's predictions.  [More information.](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/ExplanationSpec#ExplanationParameters)",
+            "isOptional": true,
+            "parameterType": "STRUCT"
+          },
+          "labels": {
+            "defaultValue": {},
+            "description": "The labels with user-defined metadata to organize your model.  Label keys and values can be no longer than 64 characters (Unicode codepoints), can only contain lowercase letters, numeric characters, underscores and dashes. International characters are allowed.  See https://goo.gl/xmQnxf for more information and examples of labels.",
+            "isOptional": true,
+            "parameterType": "STRUCT"
+          },
+          "location": {
+            "defaultValue": "us-central1",
+            "description": "Optional location to upload this Model to. If not set, defaults to `us-central1`.",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "project": {
+            "defaultValue": "{{$.pipeline_google_cloud_project_id}}",
+            "description": "Project to upload this Model to. Defaults to the project in which the PipelineJob is run.",
+            "isOptional": true,
+            "parameterType": "STRING"
+          },
+          "version_aliases": {
+            "defaultValue": [],
+            "description": "User provided version aliases so that a model version can be referenced via alias (i.e. `projects/{project}/locations/{location}/models/{modelId}@{version_alias}` instead of auto-generated version id (i.e. `projects/{project}/locations/{location}/models/{modelId}@{versionId}`). The format is [a-z][a-zA-Z0-9-]{0,126}[a-z0-9] to distinguish from versionId. A default version alias will be created for the first version of the model, and there must be exactly one default version alias for a model.",
+            "isOptional": true,
+            "parameterType": "LIST"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "artifacts": {
+          "model": {
+            "artifactType": {
+              "schemaTitle": "google.VertexModel",
+              "schemaVersion": "0.0.1"
+            },
+            "description": "Artifact tracking the created Model version."
+          }
+        },
+        "parameters": {
+          "gcp_resources": {
+            "description": "Serialized JSON of `gcp_resources` [proto](https://github.com/kubeflow/pipelines/tree/master/components/google-cloud/google_cloud_pipeline_components/proto) which tracks the upload Model's long-running operation.",
+            "parameterType": "STRING"
+          }
+        }
+      }
+    }
+  },
+  "defaultPipelineRoot": "gs://training_data_hcred-vertexai/pipeline-output/",
+  "deploymentSpec": {
+    "executors": {
+      "exec-endpoint-create": {
+        "container": {
+          "args": [
+            "--type",
+            "CreateEndpoint",
+            "--payload",
+            "{\"Concat\": [\"{\", \"\\\"display_name\\\": \\\"\", \"{{$.inputs.parameters['display_name']}}\", \"\\\"\", \", \\\"description\\\": \\\"\", \"{{$.inputs.parameters['description']}}\", \"\\\"\", \", \\\"labels\\\": \", \"{{$.inputs.parameters['labels']}}\", \", \\\"encryption_spec\\\": {\\\"kms_key_name\\\":\\\"\", \"{{$.inputs.parameters['encryption_spec_key_name']}}\", \"\\\"}\", \", \\\"network\\\": \\\"\", \"{{$.inputs.parameters['network']}}\", \"\\\"\", \"}\"]}",
+            "--project",
+            "{{$.inputs.parameters['project']}}",
+            "--location",
+            "{{$.inputs.parameters['location']}}",
+            "--gcp_resources",
+            "{{$.outputs.parameters['gcp_resources'].output_file}}",
+            "--executor_input",
+            "{{$}}"
+          ],
+          "command": [
+            "python3",
+            "-u",
+            "-m",
+            "google_cloud_pipeline_components.container.v1.endpoint.create_endpoint.launcher"
+          ],
+          "image": "gcr.io/ml-pipeline/google-cloud-pipeline-components:2.15.0"
+        }
+      },
+      "exec-load-bq-dataset": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "load_bq_dataset"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&  python3 -m pip install --quiet --no-warn-script-location 'google-cloud-bigquery[all]' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef load_bq_dataset(\n    project_id: str,\n    bq_dataset: str,\n    dataset_train: Output[Dataset] = None,\n    dataset_test: Output[Dataset] = None,\n):\n    from google.cloud import bigquery\n    from sklearn.model_selection import train_test_split\n    import logging\n\n    SEED = 42\n    TEST_SIZE=0.15\n    # PROJECT_ID = \"hcred-vertexai\"\n    # BQ_DATASET = \"hcred_train\"\n\n    training_query = f\"\"\"\n        SELECT * FROM `{project_id}.{bq_dataset}.train_base` as tb\n        LEFT JOIN `{project_id}.{bq_dataset}.train_static_0` as ts ON tb.case_id = ts.case_id\n        LEFT JOIN `{project_id}.{bq_dataset}.train_static_cb_0` as tscb ON ts.case_id = tscb.case_id\n    \"\"\"\n\n    client = bigquery.Client(project=project_id)\n    full_train_query = client.query(training_query)\n    logging.info(\"bQuery completed\")\n    full_train_df = full_train_query.to_dataframe()\n    logging.info(\"bQuery to dataframe completed\")\n    train_df, val_df = train_test_split(full_train_df, random_state=SEED, test_size=TEST_SIZE)\n\n    train_df.to_parquet(dataset_train.path, index=False)\n    logging.info(\"train_df save completed\")\n    val_df.to_parquet(dataset_test.path, index=False)\n    logging.info(\"val_df save completed\")\n\n"
+          ],
+          "image": "europe-docker.pkg.dev/vertex-ai/prediction/sklearn-cpu.1-0:latest"
+        }
+      },
+      "exec-model-deploy": {
+        "container": {
+          "args": [
+            "--type",
+            "DeployModel",
+            "--payload",
+            "{\"Concat\": [\"{\", \"\\\"endpoint\\\": \\\"\", \"{{$.inputs.artifacts['endpoint'].metadata['resourceName']}}\", \"\\\"\", \", \\\"traffic_split\\\": \", \"{{$.inputs.parameters['traffic_split']}}\", \", \\\"deployed_model\\\": {\", \"\\\"model\\\": \\\"\", \"{{$.inputs.artifacts['model'].metadata['resourceName']}}\", \"\\\"\", \", \\\"dedicated_resources\\\": {\", \"\\\"machine_spec\\\": {\", \"\\\"machine_type\\\": \\\"\", \"{{$.inputs.parameters['dedicated_resources_machine_type']}}\", \"\\\"\", \", \\\"accelerator_type\\\": \\\"\", \"{{$.inputs.parameters['dedicated_resources_accelerator_type']}}\", \"\\\"\", \", \\\"accelerator_count\\\": \", \"{{$.inputs.parameters['dedicated_resources_accelerator_count']}}\", \"}\", \", \\\"min_replica_count\\\": \", \"{{$.inputs.parameters['dedicated_resources_min_replica_count']}}\", \", \\\"max_replica_count\\\": \", \"{{$.inputs.parameters['dedicated_resources_max_replica_count']}}\", \"}\", \", \\\"automatic_resources\\\": {\", \"\\\"min_replica_count\\\": \", \"{{$.inputs.parameters['automatic_resources_min_replica_count']}}\", \", \\\"max_replica_count\\\": \", \"{{$.inputs.parameters['automatic_resources_max_replica_count']}}\", \"}\", \", \\\"service_account\\\": \\\"\", \"{{$.inputs.parameters['service_account']}}\", \"\\\"\", \", \\\"disable_container_logging\\\": \", \"{{$.inputs.parameters['disable_container_logging']}}\", \", \\\"enable_access_logging\\\": \", \"{{$.inputs.parameters['enable_access_logging']}}\", \", \\\"explanation_spec\\\": {\", \"\\\"parameters\\\": \", \"{{$.inputs.parameters['explanation_parameters']}}\", \", \\\"metadata\\\": \", \"{{$.inputs.parameters['explanation_metadata']}}\", \"}\", \"}\", \"}\"]}",
+            "--project",
+            "",
+            "--location",
+            "",
+            "--gcp_resources",
+            "{{$.outputs.parameters['gcp_resources'].output_file}}"
+          ],
+          "command": [
+            "python3",
+            "-u",
+            "-m",
+            "google_cloud_pipeline_components.container.v1.endpoint.deploy_model.launcher"
+          ],
+          "image": "gcr.io/ml-pipeline/google-cloud-pipeline-components:2.15.0"
+        }
+      },
+      "exec-model-evaluate": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "model_evaluate"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&  python3 -m pip install --quiet --no-warn-script-location 'pyarrow' 'category_encoders' 'dill' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef model_evaluate(\n    target_col: str,\n    test_set: Input[Dataset],\n    # model: Input[Model],\n    model: Input[Artifact],\n    metrics: Output[ClassificationMetrics],\n):\n    from pathlib import Path\n    import pandas as pd\n    import joblib\n    from sklearn.metrics import confusion_matrix, roc_curve\n    import logging\n\n    val_df = pd.read_parquet(test_set.path)\n    X = val_df.drop(columns=[target_col])\n    y = val_df[target_col]\n\n    # model_pipeline = joblib.load(model.metadata[\"model_path\"])\n\n    import dill\n    dill.settings['recurse'] = True\n\n    logging.info(f\"model_path: {model.metadata['model_path']}\")\n    with open(model.metadata[\"model_path\"], 'rb') as file:\n        model_pipeline = dill.load(\n            file=file,\n        )\n    logging.info(\"model load completed\")\n\n    all_feats = list(model_pipeline[3].get_feature_names_out())\n    X = X[all_feats]\n    X_2 = X.copy()\n\n    y_scores = model_pipeline.predict_proba(X_2)[:, 1]\n    fpr, tpr, thresholds = roc_curve(y_true=y, y_score=y_scores, pos_label=True)\n    metrics.log_roc_curve(fpr.tolist()[0::15], tpr.tolist()[0::15], thresholds.tolist()[0::15])\n\n    y_pred = model_pipeline.predict(X)\n    metrics.log_confusion_matrix(\n        [\"False\", \"True\"],\n        confusion_matrix(y, y_pred).tolist(),\n    )\n\n"
+          ],
+          "image": "europe-docker.pkg.dev/vertex-ai/prediction/sklearn-cpu.1-1:latest"
+        }
+      },
+      "exec-model-train": {
+        "container": {
+          "args": [
+            "--type",
+            "CustomJob",
+            "--payload",
+            "{\"display_name\": \"{{$.inputs.parameters['display_name']}}\", \"job_spec\": {\"worker_pool_specs\": {{$.inputs.parameters['worker_pool_specs']}}, \"scheduling\": {\"timeout\": \"{{$.inputs.parameters['timeout']}}\", \"restart_job_on_worker_restart\": {{$.inputs.parameters['restart_job_on_worker_restart']}}}, \"service_account\": \"{{$.inputs.parameters['service_account']}}\", \"tensorboard\": \"{{$.inputs.parameters['tensorboard']}}\", \"enable_web_access\": {{$.inputs.parameters['enable_web_access']}}, \"network\": \"{{$.inputs.parameters['network']}}\", \"reserved_ip_ranges\": {{$.inputs.parameters['reserved_ip_ranges']}}, \"base_output_directory\": {\"output_uri_prefix\": \"{{$.inputs.parameters['base_output_directory']}}\"}}, \"labels\": {{$.inputs.parameters['labels']}}, \"encryption_spec\": {\"kms_key_name\": \"{{$.inputs.parameters['encryption_spec_key_name']}}\"}}",
+            "--project",
+            "{{$.inputs.parameters['project']}}",
+            "--location",
+            "{{$.inputs.parameters['location']}}",
+            "--gcp_resources",
+            "{{$.outputs.parameters['gcp_resources'].output_file}}"
+          ],
+          "command": [
+            "python3",
+            "-u",
+            "-m",
+            "google_cloud_pipeline_components.container.v1.custom_job.launcher"
+          ],
+          "image": "gcr.io/ml-pipeline/google-cloud-pipeline-components:2.15.0"
+        }
+      },
+      "exec-model-upload": {
+        "container": {
+          "args": [
+            "--type",
+            "UploadModel",
+            "--payload",
+            "{\"Concat\": [\"{\", \"\\\"display_name\\\": \\\"\", \"{{$.inputs.parameters['display_name']}}\", \"\\\"\", \", \\\"description\\\": \\\"\", \"{{$.inputs.parameters['description']}}\", \"\\\"\", \", \\\"explanation_spec\\\": {\", \"\\\"parameters\\\": \", \"{{$.inputs.parameters['explanation_parameters']}}\", \", \\\"metadata\\\": \", \"{{$.inputs.parameters['explanation_metadata']}}\", \"}\", \", \\\"encryption_spec\\\": {\\\"kms_key_name\\\":\\\"\", \"{{$.inputs.parameters['encryption_spec_key_name']}}\", \"\\\"}\", \", \\\"version_aliases\\\": \", \"{{$.inputs.parameters['version_aliases']}}\", \", \\\"labels\\\": \", \"{{$.inputs.parameters['labels']}}\", \", \\\"pipeline_job\\\": \\\"\", \"projects/{{$.inputs.parameters['project']}}/locations/{{$.inputs.parameters['location']}}/pipelineJobs/{{$.pipeline_job_uuid}}\", \"\\\"\", \"}\"]}",
+            "--project",
+            "{{$.inputs.parameters['project']}}",
+            "--location",
+            "{{$.inputs.parameters['location']}}",
+            "--gcp_resources",
+            "{{$.outputs.parameters['gcp_resources'].output_file}}",
+            "--executor_input",
+            "{{$}}",
+            "{\"IfPresent\": {\"InputName\": \"parent_model\", \"Then\": [\"--parent_model_name\", \"{{$.inputs.artifacts['parent_model'].metadata['resourceName']}}\"]}}"
+          ],
+          "command": [
+            "python3",
+            "-u",
+            "-m",
+            "google_cloud_pipeline_components.container.v1.model.upload_model.launcher"
+          ],
+          "image": "gcr.io/ml-pipeline/google-cloud-pipeline-components:2.15.0"
+        }
+      }
+    }
+  },
+  "pipelineInfo": {
+    "name": "gcp-hcred-v1"
+  },
+  "root": {
+    "dag": {
+      "outputs": {
+        "artifacts": {
+          "model-evaluate-metrics": {
+            "artifactSelectors": [
+              {
+                "outputArtifactKey": "metrics",
+                "producerSubtask": "model-evaluate"
+              }
+            ]
+          }
+        }
+      },
+      "tasks": {
+        "endpoint-create": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-endpoint-create"
+          },
+          "inputs": {
+            "parameters": {
+              "display_name": {
+                "runtimeValue": {
+                  "constant": "hcred-model-endpoint"
+                }
+              },
+              "location": {
+                "runtimeValue": {
+                  "constant": "europe-west1"
+                }
+              },
+              "project": {
+                "runtimeValue": {
+                  "constant": "hcred-vertexai"
+                }
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "endpoint-create"
+          }
+        },
+        "load-bq-dataset": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-load-bq-dataset"
+          },
+          "inputs": {
+            "parameters": {
+              "bq_dataset": {
+                "runtimeValue": {
+                  "constant": "hcred_train"
+                }
+              },
+              "project_id": {
+                "runtimeValue": {
+                  "constant": "hcred-vertexai"
+                }
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "load-bq-dataset"
+          }
+        },
+        "model-deploy": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-model-deploy"
+          },
+          "dependentTasks": [
+            "endpoint-create",
+            "model-upload"
+          ],
+          "inputs": {
+            "artifacts": {
+              "endpoint": {
+                "taskOutputArtifact": {
+                  "outputArtifactKey": "endpoint",
+                  "producerTask": "endpoint-create"
+                }
+              },
+              "model": {
+                "taskOutputArtifact": {
+                  "outputArtifactKey": "model",
+                  "producerTask": "model-upload"
+                }
+              }
+            },
+            "parameters": {
+              "dedicated_resources_machine_type": {
+                "runtimeValue": {
+                  "constant": "n1-standard-4"
+                }
+              },
+              "dedicated_resources_max_replica_count": {
+                "runtimeValue": {
+                  "constant": 1.0
+                }
+              },
+              "dedicated_resources_min_replica_count": {
+                "runtimeValue": {
+                  "constant": 1.0
+                }
+              },
+              "deployed_model_display_name": {
+                "runtimeValue": {
+                  "constant": "hcred-model"
+                }
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "model-deploy"
+          }
+        },
+        "model-evaluate": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-model-evaluate"
+          },
+          "dependentTasks": [
+            "load-bq-dataset",
+            "model-train"
+          ],
+          "inputs": {
+            "artifacts": {
+              "model": {
+                "taskOutputArtifact": {
+                  "outputArtifactKey": "model",
+                  "producerTask": "model-train"
+                }
+              },
+              "test_set": {
+                "taskOutputArtifact": {
+                  "outputArtifactKey": "dataset_test",
+                  "producerTask": "load-bq-dataset"
+                }
+              }
+            },
+            "parameters": {
+              "target_col": {
+                "componentInputParameter": "target_col"
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "model-evaluate"
+          }
+        },
+        "model-train": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-model-train"
+          },
+          "dependentTasks": [
+            "load-bq-dataset"
+          ],
+          "inputs": {
+            "artifacts": {
+              "train_set": {
+                "taskOutputArtifact": {
+                  "outputArtifactKey": "dataset_train",
+                  "producerTask": "load-bq-dataset"
+                }
+              }
+            },
+            "parameters": {
+              "location": {
+                "runtimeValue": {
+                  "constant": "europe-west1"
+                }
+              },
+              "model_name": {
+                "componentInputParameter": "model_name"
+              },
+              "model_params": {
+                "componentInputParameter": "model_params"
+              },
+              "target_col": {
+                "componentInputParameter": "target_col"
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "model-train"
+          }
+        },
+        "model-upload": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-model-upload"
+          },
+          "dependentTasks": [
+            "model-evaluate",
+            "model-train"
+          ],
+          "inputs": {
+            "artifacts": {
+              "unmanaged_container_model": {
+                "taskOutputArtifact": {
+                  "outputArtifactKey": "model",
+                  "producerTask": "model-train"
+                }
+              }
+            },
+            "parameters": {
+              "display_name": {
+                "runtimeValue": {
+                  "constant": "hcred-model"
+                }
+              },
+              "location": {
+                "runtimeValue": {
+                  "constant": "europe-west1"
+                }
+              },
+              "project": {
+                "runtimeValue": {
+                  "constant": "hcred-vertexai"
+                }
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "model-upload"
+          }
+        }
+      }
+    },
+    "inputDefinitions": {
+      "parameters": {
+        "cols_to_exclude": {
+          "isOptional": true,
+          "parameterType": "LIST"
+        },
+        "force_default": {
+          "defaultValue": false,
+          "isOptional": true,
+          "parameterType": "BOOLEAN"
+        },
+        "model_description": {
+          "isOptional": true,
+          "parameterType": "STRING"
+        },
+        "model_name": {
+          "parameterType": "STRING"
+        },
+        "model_params": {
+          "isOptional": true,
+          "parameterType": "STRUCT"
+        },
+        "serving_container": {
+          "isOptional": true,
+          "parameterType": "STRUCT"
+        },
+        "target_col": {
+          "parameterType": "STRING"
+        },
+        "upload_model": {
+          "defaultValue": false,
+          "isOptional": true,
+          "parameterType": "BOOLEAN"
+        }
+      }
+    },
+    "outputDefinitions": {
+      "artifacts": {
+        "model-evaluate-metrics": {
+          "artifactType": {
+            "schemaTitle": "system.ClassificationMetrics",
+            "schemaVersion": "0.0.1"
+          }
+        }
+      }
+    }
+  },
+  "schemaVersion": "2.1.0",
+  "sdkVersion": "kfp-2.7.0"
+}
