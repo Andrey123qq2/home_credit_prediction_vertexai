@@ -6,3 +6,5 @@ BUCKET = f"training_data_{PROJECT_ID}"
 PIPELINE_ROOT_PATH = f"gs://{BUCKET}/pipeline-output/"
 BQ_DATASET = "hcred_train"
 ENDPOINT_ID = '4189161292059115520'
+PRED_CONTAINER = "europe-docker.pkg.dev/vertex-ai/prediction/sklearn-cpu.1-3:latest"
+# PARENT_MODEL = f'projects/{PROJECT_ID}/locations/{REGION}/models/6118390782433951744'

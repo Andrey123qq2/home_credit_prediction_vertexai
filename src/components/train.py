@@ -11,27 +11,25 @@ from kfp.dsl import (
 
 @component(
     packages_to_install=['pyarrow', 'category_encoders', 'dill'],
-    base_image="europe-docker.pkg.dev/vertex-ai/prediction/sklearn-cpu.1-0:latest"
+    base_image="europe-docker.pkg.dev/vertex-ai/prediction/sklearn-cpu.1-3:latest"
 )
 def model_train(
     model_name:str,
     target_col: str,
     train_set: Input[Dataset],
-    model: Output[Artifact],
-    # model: Output[Model],
-    model_params: dict = None
+    model: Output[Model],
+    serving_container_image_uri: str,
+    model_params: dict = None,
 ):
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import MinMaxScaler
     from sklearn.linear_model import LogisticRegression
     from sklearn.base import BaseEstimator, TransformerMixin
     from  category_encoders import CatBoostEncoder
-    import pathlib
     from pathlib import Path
     import pandas as pd
     import numpy as np    
     import warnings
-    import joblib
     import logging
     import gc
 
@@ -468,8 +466,8 @@ def model_train(
             ('TableDtypes Transformer', TableDtypesTransformer()),
             ('Downcast Transformer', DowncastTransformer()),
             ('Numerical Imputer', NumericalImputer(variables=NUMERICAL_FEATURES)),
-            ('Categorical Encoder', CatBoostEncoder(cols=CATEGORICAL_FEATURES)),
             ('Categorical Imputer', CategoricalImputer(variables=CATEGORICAL_FEATURES)),
+            ('Categorical Encoder', CatBoostEncoder(cols=CATEGORICAL_FEATURES)),
             ('Dates Imputer', DatesImputer(variables=DATE_FEATURES)),
             ('Dates Transformer', DateColsTransformer(date_cols=DATE_FEATURES)),
             # ('Debugger', Debugger()),
@@ -481,26 +479,20 @@ def model_train(
     model_pipeline.fit(X, y)
     logging.info("model fit completed")
 
-    model.metadata["framework"] = "scikit-learn"
-    model.metadata["containerSpec"] = {
-        "imageUri": "europe-docker.pkg.dev/vertex-ai/prediction/sklearn-cpu.1-0:latest"
-    }
-    model.metadata["model_name"] = model_name
-    pathlib.Path(model.path).mkdir()
-    model.metadata["model_path"] = Path(model.path, f"{model_name}.pkl").absolute().as_posix()
-    
-    # joblib.dump(model_pipeline, model.metadata["model_path"])
-    # import pickle
-    # with open(model.metadata["model_path"], 'wb') as f:
-    #     pickle.dump(model_pipeline, f)
+    pickle_output_path = model.path + '.pkl'
     import dill
-
-    # cloudpickle.register_pickle_by_value(TableDtypesTransformer)
-    with open(model.metadata["model_path"], 'wb') as file:
+    with open(pickle_output_path, 'wb') as file:
         dill.dump(
             obj=model_pipeline,
             file=file,
             recurse=True,
         )
 
-    # logging.info("Saved Pipeline:", model.metadata["model_path"])
+    if model:
+        model.metadata = {
+            "containerSpec": {"imageUri": serving_container_image_uri},
+            "framework": "scikit-learn",
+            "model_name": model_name,
+            "model_path": pickle_output_path,
+        }
+        model.path = pickle_output_path
