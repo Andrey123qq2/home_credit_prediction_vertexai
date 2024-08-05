@@ -10,14 +10,12 @@ aip.init(project=config.PROJECT_ID, staging_bucket=config.BUCKET, location=confi
 
 parameter_values = {
     "model_name": "hcred-model",
-    "target_col": "target",
     "serving_container_image_uri": config.PRED_CONTAINER,
     "force_default": False,
-    "cols_to_exclude": [],
     "model_params": dict(random_state=1, verbose=1, solver='liblinear', max_iter=100),
-    "upload_model": True,
+    "force_upload_model": True,
     "model_description": "",
-    "endpoint_display_name": "hcred-model-endpoint",
+    "endpoint_display_name": config.ENDPOINT_DISPLAY_NAME,
 }
 
 job = aip.PipelineJob(
@@ -25,7 +23,7 @@ job = aip.PipelineJob(
     template_path="gcp-hcred-v1.json",
     pipeline_root=config.PIPELINE_ROOT_PATH,
     parameter_values=parameter_values,
-    enable_caching=True,
+    enable_caching=config.ENABLE_CACHING,
 )
 
 job.run(service_account=config.SERVICE_ACCOUNT)
