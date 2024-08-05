@@ -1,0 +1,9 @@
+steps:
+- name: "gcr.io/cloud-builders/docker"
+  args:
+  - build
+  - "--tag=europe-west1-docker.pkg.dev/hcred-vertexai/hcred-vertexai-docker-repo/pred-sklearn:latest"
+  - "--file=./Dockerfile.pred"
+  - .
+images:
+- "europe-west1-docker.pkg.dev/hcred-vertexai/hcred-vertexai-docker-repo/pred-sklearn:latest"

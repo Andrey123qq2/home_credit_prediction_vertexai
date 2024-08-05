@@ -1,0 +1,35 @@
+FROM python:3.10
+
+# Keeps Python from generating .pyc files in the container
+ENV PYTHONDONTWRITEBYTECODE=1
+
+EXPOSE 8080
+
+ENTRYPOINT ["python", "-m", "google.cloud.aiplatform.prediction.model_server", "--trusted-host",  "pypi.org", "--trusted-host", "pypi.python.org", "--trusted-host", "files.pythonhosted.org"]
+
+# The directory is created by root. This sets permissions so that any user can
+# access the folder.
+RUN mkdir -m 777 -p /usr/app /home
+WORKDIR /usr/app
+ENV HOME=/home
+
+RUN pip install -U pip --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org
+RUN pip install --no-cache-dir --force-reinstall 'google-cloud-aiplatform[prediction]' --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org
+
+ENV CPR_USER_DIR_NAME='processing'
+
+ENV HANDLER_MODULE="google.cloud.aiplatform.prediction.handler"
+
+ENV HANDLER_CLASS='PredictionHandler'
+
+ENV PREDICTOR_MODULE='processing.predictor'
+
+ENV PREDICTOR_CLASS='CprPredictor'
+
+# requirements.txt file specified, thus copy it to the docker container.
+COPY ["./requirements_pred.txt", "./requirements.txt"]
+
+RUN pip install --no-cache-dir --force-reinstall --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org  -r ./requirements.txt
+
+# Copy the source directory into the docker container.
+COPY ["./src/processing", "processing"]
