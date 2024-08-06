@@ -1,3 +1,5 @@
 - [ ] Create Feature Store with statistics from depth 1, 2 tables
- -  [ ] Create Feature Store (pipeline or manually create online store from BigQuery view)
- -  [ ] Add using Feature Store to Training Pipeline and prediction stage
+  - [ ] Create Feature Store (pipeline or manually create online store from BigQuery view)
+  - [ ] Add using Feature Store to Training Pipeline and prediction stage
+- [ ] Add pipeline to templates
+- [ ] Create triggers for pipeline
